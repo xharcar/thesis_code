@@ -14,6 +14,7 @@ char* helpstring = "Valid arguments: \n \
 int main(int argc, char *argv[])
 {
     int data_amount;
+    int data_read = 0;
     if(argv[1]==NULL){
         printf("No arguments found, run with -h for help");
         return -1;
@@ -50,19 +51,20 @@ int main(int argc, char *argv[])
         puts("Memory allocation failed, exiting");
         return 2;
     }
-    for(int i=0;i<data_amount;i++){
-        int recv = read(desc,data+i,sizeof(char));
+    while(data_read<data_amount){
+        int recv = read(desc,data+data_read,data_amount-data_read);
         if(recv == -1) {
             switch(errno){
                 case EINTR:
                     puts("Read call interrupted, exiting");
+                    return 3;
                     break;
                 default:
                     printf("Error: %s \n",strerror(errno));
             }
-            return 3;
         }
-    }
+        data_read = strlen(data);
+    }//while-loop in case of non-fatal error
     printf("Data read from /dev/urandom: %d bytes",
          data_amount*sizeof(char));
     for(int i=0;i<data_amount;i++){
