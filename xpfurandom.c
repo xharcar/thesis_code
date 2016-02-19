@@ -1,8 +1,7 @@
 // xpfurandom.c : Cross-platform (Win/Unix/GNU/Mac OS) wrapper for /dev/urandom and Windows RNG source
 // Author : Matej Harcar, 422714@mail.muni.cz
-// v0 : 17 Feb 2016 (incomplete version, never versioned online)
-// v1 : 18 Feb 2016
-// v2 : 19 Feb 2016
+// v1 : 17 Feb 2016
+// v2 : 18 Feb 2016
 
 // Visual Studio harps up about fopen(), this suppresses it
 // fopen() is required for compatibility
@@ -29,7 +28,6 @@ int urandom_desc;
 // Windows includes
 #include <Windows.h>
 #define STATUS_SUCCESS 0x00000000
-#define STATUS_NOT_FOUND 0xC0000225 // as per https://msdn.microsoft.com/en-us/library/cc704588.aspx
 // Cannot include winnt.h, macro redefinitions
 #include <bcrypt.h>
 #pragma comment (lib, "bcrypt.lib")
@@ -56,27 +54,26 @@ char* helptext = "XPFUrandom : Cross-Platform urandom and Windows RNG Wrapper \n
 // Allocates memory for random data
 // Opens a file descriptor if necessary
 int prep(void) {
+	int rv = 0;
 #ifndef _WIN32
-	if ((urandom_desc = open("/dev/urandom", O_RDONLY)) == -1) {
-		return -1;
-	}
+	urandom_desc = open("/dev/urandom", O_RDONLY);
+	rv = urandom_desc;
 #else
-	rng_alg_handle = malloc(sizeof(BCRYPT_ALG_HANDLE));
 	NTSTATUS status = BCryptOpenAlgorithmProvider(rng_alg_handle, BCRYPT_RNG_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0);
 	// this wouldn't be needed on Win7+; however Vista does not support 
 	// BCryptGenRandom(NULL,buffer,number,x) where x & 0x00000002 == 0x2;
 	// the parameter combination means "Use system-preferred RNG";
 	// this ensures backwards compatibility with it
-	if (status != STATUS_SUCCESS) return (int)status;
+	if (status != STATUS_SUCCESS) rv = -1;
 #endif // !_WIN32
 	data = malloc(data_amount + 1);
-	if (data == NULL) return -2;
+	if (data == NULL) rv -= 2;
 	else memset(data, 0, data_amount + 1);	
 	if (filename != NULL) {
 		open_file = fopen(filename, "w");
-		if (open_file == NULL) return -3;
+		if (open_file == NULL) rv -= 4;
 	}
-	return 0;
+	return rv;
 }
 
 // Retrieves random data by calling system-specific CSPRNG
@@ -88,7 +85,7 @@ int get_random_data(void* pos, int size) {
 
 #ifndef _WIN32
 		int r2 = read(urandom_desc, pos+r, size-r);
-        if (r2 <= size && r2 != -1) {
+		if (r2 < size && r2 != -1) {
 			r += r2;
 		}
 		else if (r2 == -1 && errno != EINTR) {
@@ -96,12 +93,14 @@ int get_random_data(void* pos, int size) {
 		}
 		//on read() return -1 with EINTR, continues (r2 > size will not occur)
 #else
-		NTSTATUS status = BCryptGenRandom(*rng_alg_handle, (PUCHAR)pos+r, (ULONG)size-r, 0);
+		NTSTATUS status = BCryptGenRandom(rng_alg_handle, (PUCHAR)pos+r, (ULONG)size-r, 0);
 		// 0x00000001 flag would have just been ignored on Win8+, so the "extra entropy count" most likely doesn't matter (a lot);
 		// 0x00000002 flag see comments in prep()
-		if (status != STATUS_SUCCESS) return (int)status;
+		if (status != STATUS_SUCCESS) {
+			return (int)status;
 			// NTSTATUS defined as LONG, which is typedef'ed as long; however NTSTATUS codes are all 8 hex digits,
 			// indicating a 32-bit domain, which on x86 is the same as int; therefore this is a safe cast
+		}
 		r = strlen((char*)pos);
 		// can use strlen() since memory is set to zeroes with length size+1 for null termination; this is specifically done
 		// in case BCryptGenRandom does not retrieve enough data in one go
@@ -116,9 +115,7 @@ int get_random_data(void* pos, int size) {
 // On Unix-like, closes descriptor of /dev/urandom
 void cleanup() {
 	free(data);
-	if (open_file != NULL) {
-		fclose(open_file);
-	}
+	fclose(open_file);
 #ifndef _WIN32
 	close(urandom_desc);
 #else
@@ -175,7 +172,6 @@ int parse_args(int c, char* v[]) {
 				fprintf(stderr, "Invalid data amount input.\n");
 				return 5;
 			}
-			data_amount = x;
 		}
 
 	}
@@ -187,43 +183,18 @@ int main(int argc, char* argv[]) {
 	int r;
 	if ((r = parse_args(argc, argv)) >= 0) return r;
 
-	if ((r = prep())< 0) {
+	if (prep() < 0) {
 		// Can check for negative, since NTSTATUS error(and even warning) codes all start with 0xC, 0x8 respectively;
 		// therefore when cast to int(as prep() does), whatever decimal number they are is negative
-		switch (r) {
-			case -1: fprintf(stderr, "open() of /dev/urandom failed.");
-				break;
-			case -2: fprintf(stderr, "Memory allocation for random data failed.");
-				break;
-			case -3: fprintf(stderr, "Opening file to write failed.");
-				break;
-#ifdef _WIN32
-			case STATUS_NOT_FOUND: fprintf(stderr, "No provider found for RNG algorithm.");
-				break;
-			case STATUS_INVALID_PARAMETER: fprintf(stderr, "Invalid parameter for BCryptOpenAlgorithmProvider");
-				break;
-			case STATUS_NO_MEMORY: fprintf(stderr, "Memory allocation in BCryptOpenAlgorithmProvider failed.");
-				break;
-#endif
-			default: fprintf(stderr, "Unspecified error while preparing resources occurred.");
-		}
-		fprintf(stderr, "Exiting.\n");
+		// TODO/optional : return code switch
+		fprintf(stderr, "Resource preparation failed. Exiting.\n");
+
 		return 6;
 	}
 
-	if ((r = get_random_data(data,data_amount)) < 0) {
-		switch (r) {
-			case -1: fprintf(stderr, "Reading /dev/urandom failed.");
-				break;
-#ifdef _WIN32
-			case STATUS_INVALID_HANDLE: fprintf(stderr, "Invalid algorithm handle for BcryptGenRandom.");
-				break;
-			case STATUS_INVALID_PARAMETER: fprintf(stderr, "Invalid parameter for BCryptGenRandom.");
-				break;
-#endif // _WIN32
-			default: fprintf(stderr, "Unspecified error while retrieving random data occurred.");
-		}
-		fprintf(stderr, "Exiting.\n");
+	if (get_random_data(data,data_amount) < 0) {
+		// TODO/optional : error code switch
+		fprintf(stderr, "Random data retrieval failed. Exiting.\n");
 		cleanup();
 		return 7;
 	}
