@@ -32,7 +32,12 @@ int main(int argc, char *argv[])
     }
 
     int desc = open("/dev/urandom", O_RDONLY);
-    if(desc ==-1){
+    // not every *nix/Linux-like OS has urandom
+    if(desc == -1) {
+        puts("Opening /dev/urandom failed, trying /dev/random");
+        desc = open("/dev/random",O_RDONLY);
+    }
+    if(desc == -1){
         switch(errno){
             case EACCES:
                 puts("Access denied, exiting.");
@@ -46,7 +51,8 @@ int main(int argc, char *argv[])
         }
         return 1;
     }
-    char* data = (char*)calloc(data_amount,sizeof(char));
+    char* data = calloc(data_amount,1);
+    // sizeof(char)==1
     if(data == NULL){
         puts("Memory allocation failed, exiting");
         return 2;
@@ -56,17 +62,17 @@ int main(int argc, char *argv[])
         if(recv == -1) {
             switch(errno){
                 case EINTR:
-                    puts("Read call interrupted, exiting");
-                    return 3;
+                    recv = 0;
                     break;
                 default:
                     printf("Error: %s \n",strerror(errno));
+                    return 3;
             }
         }
         data_read = strlen(data);
-    }//while-loop in case of non-fatal error
+    }//while-loop in case of non-fatal error(EINTR)
     printf("Data read from /dev/urandom: %d bytes",
-         data_amount*sizeof(char));
+         data_amount);
     for(int i=0;i<data_amount;i++){
         printf("%d  ",data[i]);
     }

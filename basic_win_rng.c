@@ -7,23 +7,12 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#ifdef _WIN32
 //Windows-specific includes
 #include <windows.h>
 #include <bcrypt.h>
 #pragma comment(lib,"bcrypt.lib")
-#else
-#include <unistd.h>
-#endif // _WIN32
+#define STATUS_SUCCESS 0
 
-// Waits for sec seconds
-void wait_s(int sec) {
-#ifdef _WIN32
-	Sleep(sec * 1000);
-#else
-	sleep(sec);
-#endif // _WIN32
-}
 
 
 int main(int argc, char* argv[])
@@ -46,9 +35,10 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	PUCHAR data = (PUCHAR)calloc(data_amount+1,sizeof(char));
+	PUCHAR data = calloc(data_amount+1,1);
 	if (data == NULL) {
 		puts("Allocation failed, exiting.");
+		return 1;
 	}
 	while (data_read < data_amount) {
 		NTSTATUS status = BCryptGenRandom(NULL, data+data_read, data_amount-data_read, 0x00000003);
@@ -58,7 +48,7 @@ int main(int argc, char* argv[])
 		// arg 4 : flags; 0x2 see above, 0x1 uses entropy in arg3 as extra(ignored on Win8+), 
 		//			else uses just a random number for entropy
 		switch (status) {
-			case 0: //just continue, all good
+			case STATUS_SUCCESS: //just continue, all good
 				break;
 			case STATUS_INVALID_HANDLE:
 				puts("RNG algorithm handle invalid, exiting.");
@@ -71,10 +61,7 @@ int main(int argc, char* argv[])
 		data_read = strlen(data);
 	}
 	//while-loop is necessary, test runs sometimes came up with less data than desired
-	//will be fixed in urandom call
-	char* data_str = (char*)data;
-	printf("Data returned: %d bytes\n", strlen(data_str));
-	puts(data_str); // demonstrates functionality
-	//wait_s(5); // was used for debugging
+	printf("Data returned: %d bytes\n", strlen(data));
+	puts(data); // demonstrates functionality
     return 0;
 }
