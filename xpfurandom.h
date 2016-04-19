@@ -2,20 +2,19 @@
 // Declares kernel-mode-runnable functions (implemented in xpfurandom.c) 
 // that can be used on both Windows and Linux
 // Author: Matej Harcar, 422714@mail.muni.cz
-// v1: 03 Apr 2016
+// v1: 03/04 Apr 2016
 
 #ifndef _XPFURANDOM_H
 #define _XPFURANDOM_H
 
 #ifdef _WIN32
-#pragma once
-#include "ntddk.h"
-#include "wdm.h"
-#include "string.h"
-#include "bcrypt.h"
+#include <wdm.h>
+// Add path to wdm.h in project settings in VS
+#include <bcrypt.h>
+#include <string.h>
 #pragma comment (lib, "bcrypt.lib")
-#pragma comment (lib, "cng.lib")
-
+#pragma comment (lib, "ntoskrnl.lib")
+// Add path to ntoskrnl.lib in project settings in VS
 #else // Linux
 #include <linux/slab.h> // kmalloc
 #include <linux/random.h> // get_random_bytes
@@ -31,7 +30,7 @@
 // win_alg_handle : RNG algorithm handle to use on Windows; reset to NULL on Linux
 // RNG_ALGORITHM_HANDLE is typedef'ed as PVOID aka void*;
 // return value : 0 on success, 0xC0000001 on failure
-int xpfurandom_prep(void* buffer, int size, void* win_alg_handle);
+int xpfurandom_prep(void* buffer, int size, void* win_alg_handle); 
 
 // Retrieves random data by calling system-specific CSPRNG
 // buffer : memory address to write retrieved data to
@@ -39,10 +38,9 @@ int xpfurandom_prep(void* buffer, int size, void* win_alg_handle);
 // return value: on success, 0;
 // on BCryptGenRandom failure, the corresponding error code, see MSDN docs
 // on all-zero/all-one data, 0xC0000001
-int xpfurandom_get_random_data(void* buffer, int size);
+int xpfurandom_get_random_data(void* buffer, int size, void* win_alg_handle);
 
 // Cleans up, can be used in module exit functions
-void xpfurandom_cleanup();
+void xpfurandom_cleanup(void* buffer, int size, void* win_alg_handle);
 
 #endif // !_XPFURANDOM_H
-
