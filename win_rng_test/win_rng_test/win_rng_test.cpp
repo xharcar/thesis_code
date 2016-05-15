@@ -13,13 +13,12 @@
 int main(int argc, char** argv)
 {
 	using namespace std::chrono;
+	if (argc < 3) {
+		std::cerr << "Not enough arguments" << std::endl;
+		return 1;
+	}
 	ULONG rep = strtoul(argv[1], NULL, 10);
 	ULONG size = strtoul(argv[2], NULL, 10);
-	/*FILE* out = fopen("win_rng_out_4", "wb");
-	if (out == NULL) {
-		std::cerr << "fopen fail" << std::endl;
-		return 1;
-	}*/
 	PUCHAR data = (PUCHAR)calloc(size + 1, 1);
 	if (data == NULL) {
 		std::cerr << "alloc fail" << std::endl;
@@ -57,15 +56,9 @@ int main(int argc, char** argv)
 		}
 		duration<double> time_taken = end - start;
 		total += time_taken.count();
-		/*ULONG oc = fwrite(data, 1, size, out);
-		if (oc != size) {
-			puts("fwrite fail");
-			return 1;
-		}
-		fflush(out);*/
 	}
+	BCryptCloseAlgorithmProvider(alg, 0);
 	free(data);
-	//fclose(out);
 	std::cout << rep << " iterations of " << size << " B of random data in " << total << " s, avg: " << (double)(rep*size) / total << " Bps" << std::endl;
 	return 0;
 }

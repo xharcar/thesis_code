@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DEFECTS>
+  <DEFECT>
+    <SFA>
+      <FILEPATH>d:\data\bp_data\code_base\xpfurandom_user\xpfurandom_user\</FILEPATH>
+      <FILENAME>xpfurandom.c</FILENAME>
+      <LINE>32</LINE>
+      <COLUMN>16</COLUMN>
+    </SFA>
+    <DEFECTCODE>6330</DEFECTCODE>
+    <DESCRIPTION>'char' passed as _Param_(1) when 'unsigned char' is required in call to 'isgraph'.</DESCRIPTION>
+    <FUNCTION>xpfurandom_parse_args</FUNCTION>
+    <DECORATED>xpfurandom_parse_args</DECORATED>
+    <FUNCLINE>10</FUNCLINE>
+    <PATH></PATH>
+  </DEFECT>
+</DEFECTS>

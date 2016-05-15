@@ -1,0 +1,18 @@
+﻿  Building 'xpfurandom_win_mwe' with toolset 'WindowsKernelModeDriver10.0' and the 'Universal' target platform.
+  Stamping x64\Debug\xpfurandom_win_mwe.inf [Version] section with DriverVer=05/14/2016,20.21.5.579
+  xpfurandom_win_mwe.vcxproj -> D:\Data\bp_data\code_base\xpfurandom_driver\xpfurandom_win_mwe\x64\Debug\xpfurandom_win_mwe.sys
+  Driver is a Universal Driver.
+  .........................
+  Signability test complete.
+  
+  Errors:
+  None
+  
+  Warnings:
+  None
+  
+  Catalog generation complete.
+  D:\Data\bp_data\code_base\xpfurandom_driver\xpfurandom_win_mwe\x64\Debug\xpfurandom_win_mwe\xpfurandom_win_mwe.cat
+  Done Adding Additional Store
+  Successfully signed: D:\Data\bp_data\code_base\xpfurandom_driver\xpfurandom_win_mwe\x64\Debug\xpfurandom_win_mwe\xpfurandom_win_mwe.cat
+  

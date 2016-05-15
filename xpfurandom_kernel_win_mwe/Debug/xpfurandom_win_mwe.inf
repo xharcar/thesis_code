@@ -1,0 +1,93 @@
+;
+; xpfurandom_win_mwe.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=xpfurandom_win_mwe.cat
+DriverVer=05/14/2016,20.55.25.924
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+xpfurandom_win_mwe.sys  = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NTx86
+
+[Standard.NTx86]
+%xpfurandom_win_mwe.DeviceDesc%=xpfurandom_win_mwe_Device, Root\xpfurandom_win_mwe ; TODO: edit hw-id
+
+[xpfurandom_win_mwe_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+xpfurandom_win_mwe.sys
+
+;-------------- Service installation
+[xpfurandom_win_mwe_Device.NT.Services]
+AddService = xpfurandom_win_mwe,%SPSVCINST_ASSOCSERVICE%, xpfurandom_win_mwe_Service_Inst
+
+; -------------- xpfurandom_win_mwe driver install sections
+[xpfurandom_win_mwe_Service_Inst]
+DisplayName    = %xpfurandom_win_mwe.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\xpfurandom_win_mwe.sys
+
+;
+;--- xpfurandom_win_mwe_Device Coinstaller installation ------
+;
+
+[DestinationDirs]
+xpfurandom_win_mwe_Device_CoInstaller_CopyFiles = 11
+
+[xpfurandom_win_mwe_Device.NT.CoInstallers]
+AddReg=xpfurandom_win_mwe_Device_CoInstaller_AddReg
+CopyFiles=xpfurandom_win_mwe_Device_CoInstaller_CopyFiles
+
+[xpfurandom_win_mwe_Device_CoInstaller_AddReg]
+;
+
+
+[xpfurandom_win_mwe_Device_CoInstaller_CopyFiles]
+;
+
+
+[SourceDisksFiles]
+;
+
+
+[xpfurandom_win_mwe_Device.NT.Wdf]
+KmdfService =  xpfurandom_win_mwe, xpfurandom_win_mwe_wdfsect
+[xpfurandom_win_mwe_wdfsect]
+KmdfLibraryVersion = 1.15
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "xpfurandom_win_mwe Installation Disk"
+xpfurandom_win_mwe.DeviceDesc = "xpfurandom_win_mwe Device"
+xpfurandom_win_mwe.SVCDESC = "xpfurandom_win_mwe Service"

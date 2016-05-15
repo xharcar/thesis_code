@@ -15,6 +15,10 @@
 typedef unsigned long ulong;
 
 int main(int argc, char** argv){
+    if(argc<3){
+	    fprintf(stderr,"Not enough arguments\n");
+	    return -1;
+    }
     ulong iter = strtoul(argv[1],NULL,10);
     ulong size = strtoul(argv[2],NULL,10);
     char* data = malloc(size);
